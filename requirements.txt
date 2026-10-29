@@ -1,0 +1,11 @@
+pandas>=2.0
+numpy
+pyarrow
+geopandas>=0.14
+shapely>=2.0
+scikit-learn>=1.3
+requests
+openpyxl
+xlrd
+jupyter
+nbconvert

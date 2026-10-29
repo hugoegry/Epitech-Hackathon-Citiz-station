@@ -1,0 +1,179 @@
+SCRIPT ORAL — « Où installer les stations Citiz dans les prochaines années ? »
+Hackathon Mobilité · Epitech Montpellier
+
+=== Slide 1 — Titre ===
+Bonjour à toutes et à tous. Notre question est simple : où installer les stations Citiz dans les prochaines années ?
+Aujourd'hui, on place une station là où il y a du monde. Mais une station, c'est un investissement sur plusieurs années : il faut donc regarder où les habitants seront demain, pas seulement où ils sont aujourd'hui.
+Nous avons travaillé sur cinq villes : Bordeaux, Grenoble, Lille, Rennes et Toulouse. À la fin, nous proposons 72 implantations classées, de 12 à 17 par ville, avec un budget de 500 000 euros par ville.
+En quelques minutes, on va vous montrer le constat, la réponse en une image, puis comment on y arrive.
+
+=== NOUVELLE SLIDE — L'équipe (à insérer après la slide 1 « Titre ») — parle : Hugo Egry ===
+[Hugo] Avant de commencer, l'équipe. Nous sommes cinq, chacun avec un rôle clair.
+Moi, Hugo Egry, chef de groupe : j'ai monté le pipeline dans Microsoft Fabric, de l'import des données jusqu'aux exports.
+Loic Noro a trouvé, vérifié et documenté nos sources de données publiques.
+Rewann Tannou a construit et validé le modèle de prévision.
+Manech Laguens a conçu le score et la sélection sous budget.
+Et Thibault Villez Mognier a réalisé le tableau de bord Power BI et la démo que vous verrez tout à l'heure.
+Chacun vous présentera la partie qu'il a construite.
+
+=== Slide 2 — Constat ===
+Premier constat : les villes ne bougent pas d'un bloc. Certains quartiers gagnent des habitants, d'autres en perdent.
+Chaque barre compte des IRIS, c'est-à-dire des petits quartiers de l'INSEE. En vert, ceux où notre projection 2021-2030 prévoit une hausse ; en orange, une baisse.
+À Toulouse, 251 IRIS sur 252 sont en croissance. À Bordeaux, 267 sur 270. À Lille, c'est l'inverse : 301 IRIS sur 501 sont en déclin. Grenoble est partagée : 132 en hausse, 57 en baisse.
+Conclusion : placer les stations de la même façon partout serait une erreur. Il faut suivre la population de demain.
+Pour les data scientists : la variable est le taux annuel de croissance projeté 2021-2030 par IRIS (tx_proj_21_30), sur 1 378 IRIS, construit à partir des recensements INSEE 2015 et 2021 et de notre modèle. Le R² est modeste, 0,12, et 0,114 sur une ville jamais vue (validation par ville), contre 0 pour la baseline : on exploite surtout le sens de la tendance, pas la valeur exacte.
+Source : INSEE recensement IRIS 2015/2021 + projection modèle (fichier export_powerbi_iris.csv).
+
+=== Slide 3 — Réponse en une image ===
+Voici notre réponse en une seule image, sur Toulouse.
+À gauche, la carte de l'évolution prédite entre 2021 et 2030 : en rouge, les quartiers qui grandissent ; en bleu, ceux qui baissent. À Toulouse, presque tout est rouge : la ville grandit.
+À droite, en jaune, les sites que nous recommandons pour de nouvelles stations.
+En haut, le tableau classe ces recommandations. Numéro 1 : une station Citiz à Cité Amouroux. Elle desservirait 4 253 habitants en 2030, pour un coût de 39 660 euros TTC sur cinq ans, voiture électrique comprise.
+Ce n'est pas une intuition : chaque ligne du tableau donne sa justification, avec la population, la croissance prévue, le taux de pauvreté, la motorisation et le coût.
+Pour les data scientists : sur les 72 recommandations des cinq villes, 53 sont des stations Citiz et 19 des arrêts de bus, et 35 % sont en quartier prioritaire (QPV), avec un budget de 500 000 euros par ville ; les coûts sont TTC sur 5 ans.
+Source : rapport Power BI du projet (Toulouse), données INSEE + modèle.
+
+=== Slide 4 — Données ===
+D'où viennent nos chiffres ? Uniquement de données publiques et officielles.
+Le README du projet référence 20 sources, que l'on regroupe ici en 10 familles.
+L'INSEE nous donne la population de chaque quartier en 2015 et 2021, la pauvreté et la motorisation des ménages. INSEE Omphale nous donne la projection officielle par département. L'IGN donne les contours des quartiers.
+Côté mobilité : les arrêts des 5 réseaux de transport et les stations Citiz existantes. Côté construction : les permis de construire Sitadel. Côté social : les quartiers prioritaires QPV de l'ANCT. Et les coûts viennent de l'ADEME, du Cerema et de la fiche Citiz Dromolib.
+Pour les data scientists : uniquement des données agrégées, les IRIS de moins de 200 habitants sont exclus des exports (règle INSEE), et 94 % des permis Sitadel sont géolocalisés à la parcelle ou à la section cadastrale.
+Sources : voir le tableau « Sources de données » du README (insee.fr, data.geopf.fr, transport.data.gouv.fr, data.statistiques.developpement-durable.gouv.fr, data.gouv.fr, dromolib.fr, cerema.fr).
+
+=== Slide 5 — Modèle ML ===
+Le cœur du projet : anticiper où les gens vont habiter, au lieu de regarder seulement où ils habitent aujourd'hui.
+Un seul modèle, simple et explicable : une régression linéaire. Elle apprend, à partir du profil d'un quartier en 2015 (population, densité, âges, logements autorisés), la croissance qu'il a connue entre 2015 et 2021. On l'applique ensuite pour prévoir la croissance jusqu'en 2030, recalée sur la projection officielle INSEE Omphale de chaque département.
+Pour les data scientists : nous assumons un R² modeste, 0,12 en validation croisée KFold 5, et surtout 0,114 en GroupKFold par ville, c'est-à-dire sur une ville que le modèle n'a jamais vue ; la baseline DummyRegressor est à -0,002, soit environ 0. La MAE passe de 0,0178 pour la baseline à 0,0165.
+Ce qui a fait la différence : les permis de construire Sitadel. Sans eux, le R² n'était que de 0,009. Le Gradient Boosting a été testé et écarté : son R² est négatif, -0,30 en KFold et -0,20 par ville.
+Le modèle n'explique que 12 % de la variance : on l'utilise pour la tendance, pas pour une prévision au chiffre près.
+Source : ml_metrics.json et ml_metrics_avant_sitadel.json, 1 403 IRIS d'apprentissage.
+
+=== NOUVELLE SLIDE — Validé sans fuite de données (à insérer après la slide 5 « Modèle ML ») — parle : Rewann Tannou ===
+[Rewann] Un R² de 0,12, c'est modeste. Alors comment savoir si le modèle est utile ? Nous l'avons testé comme dans la vraie vie, sans fuite de données.
+Trois étapes. Un : le modèle ne voit que le profil des quartiers en 2015. Deux : il doit deviner leur croissance entre 2015 et 2021, que l'on connaît déjà. Trois : on le teste aussi sur une ville entière qu'il n'a jamais vue pendant l'apprentissage.
+Le résultat qui compte pour Citiz : parmi les 20 % de quartiers que notre modèle classe en tête, 80 % ont réellement gagné des habitants. Sur une ville jamais vue, c'est encore 74 %. Au hasard, on tomberait à 60 %, la part des quartiers qui ont grandi.
+Autrement dit : quand le modèle place un quartier dans son top 20 %, il a raison 4 fois sur 5.
+Pour les data scientists : validation croisée KFold 5 et GroupKFold par ville sur 1 403 IRIS, avec des prédictions hors échantillon (cross_val_predict). Top 20 % : 80,1 % d'IRIS réellement en hausse en KFold et 74,0 % en GroupKFold, contre 60,2 % sur l'ensemble des IRIS. F1 sur le top 20 % : 0,39 et 0,36, contre environ 0,20 au hasard ; macro-F1 hausse / baisse : 0,50 contre 0,38 pour la baseline « toujours en hausse ».
+Source : ml_metrics.json, bloc validation_jury.
+
+=== Slide 6 — Score par euro ===
+Comment passer d'une carte à une liste d'achats ? Avec un score par euro, en trois étapes.
+Un : pour chaque site possible, on compte les habitants qui ne sont pas encore desservis, à moins de 350 mètres, soit environ 5 minutes à pied, et on les projette en 2030.
+Deux : on donne un bonus aux quartiers où les ménages ont beaucoup de voitures, car c'est là qu'une voiture partagée réduit le plus l'usage de la voiture individuelle, et aux quartiers pauvres ou en QPV, pour l'équité. Chaque bonus pèse 0,5.
+Trois : on divise ce score par le coût TTC sur cinq ans, on garde le meilleur type d'installation par quartier, puis on choisit les meilleurs sites un par un jusqu'à épuiser 500 000 euros par ville.
+Pour les data scientists : score = gain_pop_2030 × (1 + 0,5 × rang de motorisation + 0,5 × équité), l'équité étant le maximum entre le rang de pauvreté dans la ville et 1 si l'IRIS contient un QPV ; tri par score par k€, puis sélection gloutonne par ville sur le coût cumulé (notebook 03_ml). Résultat : 72 sites, de 12 à 17 par ville : 53 stations Citiz et 19 arrêts de bus.
+Sources : notebook 03_ml.ipynb, README (Héran & Pouillaude pour les 350 m ; coûts Dromolib, Cerema, ADEME).
+
+=== NOUVELLE SLIDE — Un classement robuste (à insérer après la slide 6 « Score par euro ») — parle : Manech Laguens ===
+[Manech] Notre score dépend de deux poids : 0,5 pour la motorisation et 0,5 pour l'équité. Et si on avait choisi d'autres poids ?
+Nous avons testé 24 autres combinaisons, chaque poids allant de 0 à 1. Résultat : en médiane, 87,5 % des sites restent recommandés. Le top 5 de chaque ville reste intact dans le cas médian, et dans le pire cas 88 % du top 5 est conservé.
+Même avec la pire combinaison, 68 % des sites restent dans la liste. Le classement ne tient donc pas à un réglage fin.
+Soyons honnêtes sur un point : la distance de desserte compte davantage. À 300 mètres au lieu de 350, 90 % des sites restent. Mais à 500 mètres, il n'en reste que 47 %, et les arrêts de bus passent de 19 à 3, car beaucoup plus d'habitants sont alors considérés comme déjà desservis. Nous gardons 350 mètres, environ 5 minutes à pied, la valeur de la littérature (Héran & Pouillaude).
+Pour les data scientists : 24 variantes de (W_CARBONE, W_EQUITE) dans {0 ; 0,25 ; 0,5 ; 0,75 ; 1}², même pipeline et même budget de 500 000 € par ville. Part des 72 sites de référence toujours sélectionnés : médiane 87,5 %, minimum 68 %. Top 5 par ville : médiane 100 %, minimum 88 %. Rayon recalculé à 300 et 500 m : 90,3 % et 47,2 % des sites conservés.
+Source : analysis/sensi.py, sensi_poids.csv, sensi_distance.csv.
+
+=== Slide 7 — Démo ===
+Passons à la démo, dans Power BI.
+À gauche, un seul geste : on choisit une ville. La vidéo part de Toulouse, puis je clique sur Rennes : tout le rapport se met à jour. Numéro 1 à Rennes : Beauregard, 3 576 habitants desservis en 2030, avec une station Citiz à 39 660 euros TTC sur 5 ans.
+Je reviens sur Toulouse. La carte de gauche se colore : en rouge, les quartiers qui vont grandir d'ici 2030 ; en bleu, ceux qui baissent. La carte de droite montre en jaune les sites recommandés.
+En haut, le tableau donne le classement : numéro 1, Cité Amouroux, 4 253 habitants desservis en 2030, 39 660 euros TTC sur 5 ans, avec une justification en clair pour chaque ligne.
+Le message pour Citiz : en un clic, on sait où investir dans chaque ville, et pourquoi.
+Pour les data scientists : le rapport lit export_powerbi_iris.csv (couleur = tx_proj_21_30) et export_powerbi_suggestions.csv filtré sur recommande = True ; les IRIS de moins de 200 habitants sont exclus des exports.
+
+=== Slide 8 — L’argent ===
+Parlons argent.
+Au total, nos 72 sites, 53 stations Citiz et 19 arrêts de bus, coûtent 2 386 980 euros TTC sur 5 ans, pour les 5 villes. Soit environ 480 000 euros par ville, sous un budget de 500 000 euros par ville.
+Ces 72 sites desservent 174 412 nouveaux habitants en 2030. Cela fait environ 13,7 euros par habitant desservi, sur cinq ans.
+D'où viennent ces chiffres ? Une station Citiz, c'est 7 250 euros HT d'investissement et 5 160 euros HT par an de fonctionnement, d'après la fiche Citiz publiée par Dromolib. Ces 5 160 euros par an comprennent la voiture électrique fournie par Citiz, avec son amortissement, l'assurance, l'entretien et l'énergie. On ajoute la TVA à 20 % et on compte 5 ans : (7 250 + 5 × 5 160) × 1,2 = 39 660 euros TTC. Un arrêt de bus coûte 15 000 euros, le coût moyen d'un arrêt selon le Cerema, investissement seulement. Les coûts des stations vélo viennent de l'ADEME, mais aucune n'a été retenue.
+Soyons clairs : nous n'avons pas les données de recettes de Citiz. Nous ne chiffrons donc aucun revenu ; ce sont uniquement des coûts.
+Pour les data scientists : somme de cout_eur et de gain_pop_2030 sur les lignes recommandées de export_powerbi_suggestions.csv ; 2 386 980 / 174 412 = 13,69 euros.
+
+=== NOUVELLE SLIDE — 3 scénarios d'investissement (à insérer après la slide 8 « L'argent ») — parle : Manech Laguens ===
+[Manech] Le budget de 500 000 euros par ville est une hypothèse. Voici ce que donnent trois niveaux d'investissement.
+Avec 250 000 euros par ville : 35 sites, 91 959 habitants desservis en 2030, soit 12,4 euros par habitant.
+Avec 500 000 euros, notre recommandation : 72 sites, 174 412 habitants, 13,7 euros par habitant.
+Avec 1 million d'euros par ville : 142 sites, 320 854 habitants, 15,4 euros par habitant.
+Le coût par habitant augmente avec le budget : les premiers euros vont aux sites les plus efficaces, les suivants à des sites qui desservent moins de monde. Nous recommandons 500 000 euros, un équilibre entre couverture et efficacité. Mais c'est à Citiz de choisir son niveau d'ambition : il suffit de changer un paramètre pour recalculer la liste.
+Pour les data scientists : même sélection gloutonne par score par k€, seul BUDGET_EUR change. Coûts totaux pour les 5 villes : 1 141 500 €, 2 386 980 € et 4 941 240 € TTC sur 5 ans.
+Source : analysis/sensi.py (bloc budgets).
+
+=== Slide 9 — Éthique & limites ===
+Un mot sur l'éthique et sur nos limites.
+Équité d'abord : 35 % des sites recommandés sont dans un quartier prioritaire de la politique de la ville. Ce n'est pas un hasard : le score donne un bonus aux quartiers pauvres et aux QPV.
+Vie privée : uniquement des données publiques agrégées, et les quartiers de moins de 200 habitants sont exclus des exports détaillés, comme le fait l'INSEE.
+Pas de stigmatisation : on parle de « croissance » ou de « décroissance » et de « besoin d'offre », jamais de « quartier en déclin » dans les sorties.
+Nos limites, on les assume. La projection officielle Omphale n'existe qu'au niveau du département, donc notre calage aussi. Les distances sont mesurées à vol d'oiseau, sans le réseau piéton réel. Et le modèle a un R² modéré de 0,12 : il donne une tendance, pas une prévision au chiffre près.
+Pour les data scientists : autres limites du README : 6 % des permis Sitadel non localisés ; le carbone est approché par la motorisation, faute de données publiques de report modal, donc pas de tonnes de CO₂ chiffrées.
+Sources : README (Éthique, Évaluation et limites), export_powerbi_suggestions.csv (25 QPV sur 72 recommandations, soit 34,7 %).
+
+=== NOUVELLE SLIDE — Les limites de nos données (à insérer après la slide 9 « Éthique & limites ») — parle : Loic Noro ===
+[Loic] Nos données ont aussi des limites, et nous préférons les dire nous-mêmes.
+Le recensement INSEE le plus récent que nous utilisons date de 2021 : c'est la dernière photo détaillée par quartier.
+Les stations Citiz existantes ont été relevées à une seule date, dans le flux public : une station ouverte depuis n'est pas prise en compte.
+6 % des permis de construire Sitadel n'ont pas pu être localisés sur le cadastre.
+Nous couvrons 5 métropoles seulement.
+Les quartiers de moins de 200 habitants sont exclus, comme le fait l'INSEE.
+Les coûts Citiz viennent de la fiche Dromolib, qui donne des prix « à partir de ».
+Nous n'avons aucune donnée d'usage Citiz : ni réservations, ni chiffre d'affaires.
+Enfin, un R² de 0,12 : la croissance d'un quartier reste difficile à prévoir. C'est pour cela que nous l'utilisons pour classer les quartiers, pas pour prédire au chiffre près.
+Pour les data scientists : géolocalisation Sitadel 59,2 % à la parcelle, 35,1 % à la section, 5,6 % non localisés (parcelles renumérotées depuis l'autorisation) ; IRIS redécoupés entre 2015 et 2021 exclus de l'apprentissage ; distances à vol d'oiseau depuis des carreaux de 200 m.
+Sources : README (Évaluation et limites), run_01_ingest.ipynb, fiche Citiz Dromolib 2025.
+
+=== NOUVELLE SLIDE — Données publiques, aucune donnée personnelle (à insérer après « Les limites de nos données ») — parle : Loic Noro ===
+[Loic] Côté réglementaire, notre projet est simple : uniquement des données publiques ouvertes, agrégées par quartier IRIS. Nous ne traitons aucune donnée personnelle ni aucune donnée individuelle.
+Nous respectons le secret statistique de l'INSEE : les IRIS de moins de 200 habitants sont exclus des exports détaillés, et les carreaux Filosofi intègrent déjà le seuil INSEE de 11 ménages.
+Les licences sont vérifiées. La plupart des sources sont sous Licence Ouverte Etalab : INSEE, IGN, SDES Sitadel, ANCT, cadastre, flux Citiz, GTFS de Bordeaux et de Lille. Les GTFS de Grenoble, Rennes et Toulouse sont sous licence ODbL : réutilisation libre avec mention de la source, et partage à l'identique si l'on rediffuse une base dérivée.
+Dernier point, l'accessibilité : nous n'avons pas modélisé l'accès des personnes à mobilité réduite. L'accessibilité PMR de chaque station devra être vérifiée sur le terrain avant l'installation.
+Pour les data scientists : licences relevées le 26/10/2026 dans le champ « license » des jeux data.gouv.fr (Licence Ouverte : TBM, ilévia, flux Citiz, IGN Contours IRIS, ANCT QPV, cadastre, Filosofi, SDES Sitadel ; ODbL : TAG/SMMAG, STAR, Tisséo) et dans les mentions légales d'insee.fr (Licence Ouverte 2.0).
+Sources : insee.fr/fr/information/2008466, data.gouv.fr, README (Éthique).
+
+=== Slide 10 — La suite ===
+Et après le hackathon ? Trois pistes, dans l'ordre.
+Un : les stations existantes. Nous avons déjà la position des stations Citiz grâce au flux GBFS, et nos prédictions par quartier. On peut donc repérer les stations situées dans des quartiers qui vont perdre des habitants, et proposer de déplacer une station d'un point A vers un point B qui grandit, plutôt que d'en construire une nouvelle.
+Deux : les données d'usage de Citiz, c'est-à-dire les réservations et le chiffre d'affaires par station. Aujourd'hui nous ne les avons pas : avec elles, on passerait d'un coût par habitant à une vraie mesure de rentabilité.
+Trois : étendre la méthode à d'autres villes où Citiz est présent. Le pipeline est le même, il suffit d'ajouter les données de la ville.
+Pour les data scientists : avec les données d'usage, on pourrait aussi apprendre directement la demande par station et dépasser la limite d'un R² de 0,12 sur la croissance démographique.
+
+=== NOUVELLE SLIDE — Ce qui nous démarque (à insérer après la slide 10 « La suite », juste avant la conclusion) — parle : Hugo Egry ===
+[Hugo] Ce qui nous démarque tient en une phrase. Les autres regardent où sont les habitants aujourd'hui. Nous, nous regardons où ils seront en 2030.
+Une station Citiz s'installe pour plusieurs années : elle doit être là où la demande arrive, pas seulement là où elle est aujourd'hui.
+Et ce n'est pas une promesse : sur le passé, 80 % des quartiers que notre modèle place en tête ont réellement grandi, et 74 % sur une ville qu'il n'avait jamais vue.
+Chaque recommandation est en plus chiffrée, justifiée et tient dans un budget.
+
+=== Slide 11 — Conclusion & questions ===
+Pour conclure, une seule idée : investir là où les habitants arrivent.
+Nous avons couvert 5 villes et proposé 72 sites classés : 53 stations Citiz et 19 arrêts de bus. Ils desservent 174 412 habitants en 2030, pour 2 386 980 euros TTC sur cinq ans, soit environ 13,7 euros par habitant desservi, avec un budget de 500 000 euros par ville. Et 35 % de ces sites sont en quartier prioritaire.
+Tout repose sur des données publiques, un modèle simple et honnête, et un tableau de bord où chaque recommandation est justifiée.
+Merci pour votre attention. Nous sommes prêts pour vos questions.
+
+=== NOUVELLE SLIDE — Annexes (titre) (à insérer après la slide 11 « Conclusion & questions ») — parle : Hugo Egry ===
+[Hugo] Pour vos questions, trois annexes : les métriques détaillées, le pipeline Fabric et les variables du modèle.
+
+=== NOUVELLE SLIDE — Annexe 1 · Les métriques (à insérer après « Annexes ») — parle : Rewann Tannou ===
+[Rewann] Le tableau complet des métriques, en validation croisée KFold et sur une ville jamais vue (GroupKFold), face à une référence.
+Q : « Un R² de 0,12, ce n'est pas faible ? » R : Si, et nous l'assumons. La croissance d'un quartier dépend de projets qu'aucune donnée publique ne voit encore. Mais le modèle bat la moyenne, y compris sur une ville jamais vue (0,114 contre -0,021), et surtout il classe bien : 80 % de son top 20 % a réellement grandi. Nous l'utilisons pour classer, pas pour prédire au chiffre près.
+Q : « Pourquoi pas un modèle plus puissant ? » R : Le Gradient Boosting a été testé : R² négatif, -0,30 en KFold et -0,20 par ville. Avec 1 403 IRIS et 6 variables, il sur-apprend. La régression linéaire est plus robuste et explicable.
+Q : « Un F1 de 0,39 sur le top 20 %, c'est peu ? » R : Retrouver exactement les 20 % qui grandiront le plus est difficile ; au hasard on serait à 0,20, nous doublons. Pour Citiz, ce qui compte est que les quartiers retenus grandissent : c'est le cas à 80 %.
+Source : ml_metrics.json.
+
+=== NOUVELLE SLIDE — Annexe 2 · Le pipeline Fabric (à insérer après l'annexe 1) — parle : Hugo Egry ===
+[Hugo] Le pipeline tient en 4 notebooks dans Microsoft Fabric. 01 importe les 20 sources publiques dans les tables bronze du lakehouse. 02 calcule les variables de chaque IRIS dans silver_iris. 03 entraîne le modèle, calcule le score et la sélection sous budget dans les tables gold. 04 exporte les CSV et GeoJSON lus par Power BI.
+Q : « C'est reproductible ? » R : Oui : 4 notebooks à lancer dans l'ordre, random_state = 0, et les URL de toutes les sources sont dans le README. En local, une cale spark_shim fait tourner les mêmes notebooks.
+Q : « Et quand un nouveau recensement sort ? » R : On change l'URL de la source et on relance 01 à 04 : la carte et le classement se mettent à jour.
+Source : README (Pipeline), notebooks 01 à 04.
+
+=== NOUVELLE SLIDE — Annexe 3 · Les variables du modèle (à insérer après l'annexe 2) — parle : Rewann Tannou ===
+[Rewann] Les 6 variables du modèle, toutes mesurées sur l'année de départ : population et densité en logarithme, parts des 0-14 ans, des 15-29 ans et des 60 ans et plus, et logements autorisés par habitant et par an, issus de Sitadel. La cible est le taux de croissance annuel 2015-2021 de chaque IRIS.
+Q : « Pourquoi ces variables ? » R : Elles existent en 2015 et en 2021 pour chaque IRIS : on peut apprendre sur 2015 et projeter depuis 2021. Les permis Sitadel ont fait passer le R² de 0,009 à 0,12.
+Q : « Pourquoi caler sur Omphale ? » R : Omphale est la projection officielle de l'INSEE, publiée seulement par département. Nous décalons nos prédictions pour que leur moyenne pondérée par la population égale le taux Omphale 2021-2030 de chaque département : Omphale donne le total, notre modèle le répartit entre quartiers.
+Q : « Et les fuites de données ? » R : Pour l'apprentissage, uniquement le profil 2015 et les permis 2015-2020 ; pour la projection, le profil 2021 et les permis 2021-2025. Les permis annulés sont exclus.
+Source : notebooks 02_features_iris et 03_ml, README (Méthode).
+
+=== QUESTIONS PROBABLES DU JURY (réponses courtes) ===
+[Manech] Q : « Pourquoi 39 660 euros par station ? » R : Fiche Citiz publiée par Dromolib : 7 250 euros HT d'investissement et 5 160 euros HT par an avec une voiture électrique fournie par Citiz, amortissement compris. Avec la TVA à 20 % sur 5 ans : (7 250 + 5 × 5 160) × 1,2 = 39 660 euros. Ce sont des prix « à partir de » : un minimum.
+[Manech] Q : « Pourquoi autant d'arrêts de bus ? » R : Un arrêt coûte 15 000 euros (Cerema), soit 2,6 fois moins qu'une station Citiz à 39 660 euros : là où il dessert déjà beaucoup d'habitants, son score par euro est meilleur. Nous ne comptons que l'investissement, faute de coût public d'exploitation par arrêt.
+[Manech] Q : « Et si on change les poids du score ? » R : Nous avons testé 24 combinaisons : 87,5 % des sites restent recommandés en médiane, 68 % dans le pire cas.
+[Loic] Q : « Et l'accessibilité des personnes à mobilité réduite ? » R : Elle n'est pas modélisée : l'accessibilité PMR de chaque station est à vérifier sur le terrain avant l'installation.
+[Loic] Q : « Avez-vous utilisé des données personnelles ? » R : Non : uniquement des données publiques agrégées par IRIS, avec le secret statistique de l'INSEE (IRIS de moins de 200 habitants exclus).
+[Thibault] Q : « Citiz peut-il utiliser l'outil sans nous ? » R : Oui : le rapport Power BI se filtre par ville, et chaque recommandation affiche sa justification et son coût.

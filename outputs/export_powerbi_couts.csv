@@ -1,0 +1,4 @@
+type,cout_invest_ttc_eur,cout_fonct_an_ttc_eur,source,url,cout_horizon_eur
+citiz,8700.0,6192.0,"Fiche Citiz (Dromolib 2025) : investissement 7 250 € HT par station d'une voiture, fonctionnement 5 160 € HT/an avec voiture électrique fournie par Citiz, amortissement inclus ; TVA 20 %",https://dromolib.fr/wp-content/uploads/2025/11/FICHE_Citiz_Autopartage.pdf,39660.0
+arret_bus,15000.0,0.0,"Cerema, panorama de 55 SD'AP : coût moyen d'un arrêt 15 000 € TTC ; aucun coût public d'exploitation par arrêt trouvé",https://www.cerema.fr/system/files/documents/2018/02/infographie_panorama_55_dossiers_sd_ap_cle53c7d9.pdf,15000.0
+velo,0.0,32910.0,"ADEME, Étude d'évaluation sur les services vélos : 2 194 €/vélo/an tout compris (agglo > 500 000 hab), 12 à 15 vélos par station",https://www.actu-environnement.com/media/pdf/dossiers/808-ademe-services-velo.pdf,164550.0

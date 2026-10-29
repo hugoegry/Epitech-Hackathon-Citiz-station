@@ -1,0 +1,63 @@
+{
+  "n_iris_train": 1403,
+  "cible": "taux de croissance annuel 2015-2021",
+  "modeles": {
+    "baseline_moyenne": {
+      "kfold_5": {
+        "r2": -0.0015,
+        "mae": 0.01775
+      },
+      "par_ville": {
+        "r2": -0.0207,
+        "mae": 0.0186
+      }
+    },
+    "regression_lineaire": {
+      "kfold_5": {
+        "r2": 0.1202,
+        "mae": 0.01648
+      },
+      "par_ville": {
+        "r2": 0.1139,
+        "mae": 0.01742
+      }
+    },
+    "gradient_boosting": {
+      "kfold_5": {
+        "r2": -0.2953,
+        "mae": 0.01716
+      },
+      "par_ville": {
+        "r2": -0.1972,
+        "mae": 0.01821
+      }
+    }
+  },
+  "validation_jury": {
+    "part_iris_en_hausse": 0.6023,
+    "croissance_moyenne": 0.00719,
+    "kfold_5": {
+      "bon_sens_tendance": 0.613,
+      "top20_part_en_hausse": 0.8007,
+      "top20_croissance_moyenne": 0.02143,
+      "f1_hausse": 0.7365,
+      "f1_macro_hausse": 0.5038,
+      "f1_hausse_baseline": 0.7518,
+      "precision_top20": 0.3915,
+      "rappel_top20": 0.3915,
+      "f1_top20": 0.3915
+    },
+    "par_ville": {
+      "bon_sens_tendance": 0.618,
+      "top20_part_en_hausse": 0.7402,
+      "top20_croissance_moyenne": 0.01806,
+      "f1_hausse": 0.7426,
+      "f1_macro_hausse": 0.5011,
+      "f1_hausse_baseline": 0.7518,
+      "precision_top20": 0.3594,
+      "rappel_top20": 0.3594,
+      "f1_top20": 0.3594
+    }
+  },
+  "modele_retenu": "regression_lineaire"
+}
